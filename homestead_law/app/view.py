@@ -19,10 +19,11 @@ from __future__ import annotations
 import os
 import tempfile
 
+from homestead.keep.rungs import Disposition
+from homestead_law import queue as queue_mod
 from homestead_law.app import advisories, demo
 from homestead_law.app.window import Window
 from homestead_law.store import Sidecar
-from homestead.keep.rungs import Disposition
 
 
 def run() -> int:
@@ -33,7 +34,9 @@ def run() -> int:
     os.environ.setdefault("HOMESTEAD_HOME", tempfile.mkdtemp(prefix="homestead-demo-"))
     store = Sidecar()
     demo.seed(store)
+    demo.seed_deadlines(store)
     window = Window()
+    today = demo.TODAY   # synthetic data; the real app would use date.today()
 
     root = tk.Tk()
     root.title("Homestead")
@@ -50,8 +53,46 @@ def run() -> int:
         clear()
         ttk.Label(content, text="Homestead", font=("TkDefaultFont", 22)).pack(anchor="w")
         ttk.Label(content, text="The affairs you handle yourself.").pack(anchor="w", pady=(4, 24))
-        ttk.Label(content, text="Nothing is open.", foreground="grey").pack(anchor="w")
-        ttk.Button(content, text="Open custody matter", command=show_list).pack(anchor="w", pady=(24, 0))
+        # The resting cover shows only counts that survive the re-identification
+        # check (I-31). Over a single matter that is nothing, so the cover rests
+        # on "Nothing is open" — the queue is there when the operator asks.
+        resting = queue_mod.cover(store, today=today)
+        summary = ", ".join(f"{n} {k.replace('_', ' ')}" for k, n in resting.items())
+        ttk.Label(content, text=summary or "Nothing is open.", foreground="grey").pack(anchor="w")
+        ttk.Button(content, text="What's due", command=show_queue).pack(anchor="w", pady=(24, 0))
+        ttk.Button(content, text="Open custody matter", command=show_list).pack(anchor="w", pady=(4, 0))
+
+    def show_queue() -> None:
+        clear()
+        # Load the matter's records into the window so a queue item opens through
+        # the same gated detail path as the list (the demo is one matter; a
+        # multi-matter app would load each matter the queue spans).
+        window.open_list(store.records(demo.MATTER))
+        ttk.Label(content, text="What's due", font=("TkDefaultFont", 16)).pack(anchor="w")
+        ttk.Label(
+            content, text="showing derived · L4 present", foreground="grey"
+        ).pack(anchor="w", pady=(0, 12))
+
+        items = queue_mod.queue(store, today=today)
+        listbox = tk.Listbox(content, height=12)
+        listbox.pack(fill="both", expand=True)
+        for item in items:
+            if item.gap:
+                mark = "date unreadable"
+            elif item.overdue:
+                mark = f"overdue by {abs(item.days_until)}d"
+            else:
+                mark = f"in {item.days_until}d"
+            listbox.insert("end", f"[{item.rung.value}]  {item.shown}  ·  {mark}")
+
+        def on_open(_event: object = None) -> None:
+            selection = listbox.curselection()
+            if selection:
+                show_detail(items[selection[0]].ref)
+
+        listbox.bind("<Double-Button-1>", on_open)
+        ttk.Button(content, text="Open", command=on_open).pack(anchor="w", pady=(12, 0))
+        ttk.Button(content, text="Close", command=show_cover).pack(anchor="w", pady=(4, 0))
 
     def show_list() -> None:
         clear()

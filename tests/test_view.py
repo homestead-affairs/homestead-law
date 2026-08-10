@@ -48,3 +48,19 @@ def test_open_matter_lists_everything_but_the_sealed_field(tmp_path, monkeypatch
     assert ("custody", "child_name", "primary") in refs       # L4 shown as derived
     assert ("custody", "courthouse", "primary") in refs       # L1 shown
     assert all("123-45-6789" not in row.text for row in window.rows)
+
+
+def test_the_queue_demo_orders_gates_and_hides_the_cover(tmp_path, monkeypatch):
+    """The queue rendered headless: overdue before far-off, the L4 deadline shown
+    as its derived instruction (never its date), and the resting cover revealing
+    nothing over a single matter (I-31) even though the queue has items."""
+    monkeypatch.setenv("HOMESTEAD_HOME", str(tmp_path))
+    out = demo.compose_queue(Sidecar())
+
+    overdue_line = next(i for i, l in enumerate(out.splitlines()) if "overdue by 5" in l)
+    hearing_line = next(i for i, l in enumerate(out.splitlines()) if "due in 36" in l)
+    assert overdue_line < hearing_line
+
+    assert "A submission is due" in out    # the L4 deadline's derived form
+    assert "2026-08-12" not in out         # never the L4 date on the ambient queue
+    assert "Nothing is open" in out        # the resting cover, over one matter (I-31)

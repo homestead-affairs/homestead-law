@@ -27,9 +27,12 @@ lands in the shared store is only what the household chose to expose.
 > deadlines across every matter, iterating `all_matters()` (the registry, not a
 > hand-kept list — BUG-6's fix), computing urgency with `homestead.keep.dates`,
 > surfacing an unparseable date as a gap (I-8), dropping a sealed deadline, and
-> feeding the cover's re-identification check (I-31). Suite: **84 passed**. The
-> "prove one app on SQLite end to end" milestone is met; the adapter seam and
-> the gated Postgres sync generalize from here.
+> feeding the cover's re-identification check (I-31). The queue is **wired into
+> the app**: the resting cover shows only counts that survive re-identification
+> (nothing, over a single matter), a "What's due" view lists the queue, and
+> `--demo` prints it headless. Suite: **85 passed**. The "prove one app on
+> SQLite end to end" milestone is met; the adapter seam and the gated Postgres
+> sync generalize from here.
 
 ## What is enforced here today
 

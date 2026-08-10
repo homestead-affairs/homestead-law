@@ -44,7 +44,10 @@ def main(argv: list[str] | None = None) -> int:
 
         with tempfile.TemporaryDirectory(prefix="homestead-law-demo-") as tmp:
             os.environ["HOMESTEAD_HOME"] = tmp
-            print(demo.compose_demo(Sidecar()))
+            store = Sidecar()
+            print(demo.compose_demo(store))
+            print()
+            print(demo.compose_queue(store))
         return 0
 
     # Imported inside main so the module stays importable on a headless box.

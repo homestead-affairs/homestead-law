@@ -13,12 +13,17 @@ re-identification judgement `Classified` requires and a pack does not author.
 """
 from __future__ import annotations
 
+from homestead.keep.rungs import Classified, Disposition, Rung
+from homestead_law import queue as queue_mod
 from homestead_law.app.window import Ref, Window
-from homestead_law.store import Sidecar
-from homestead.keep.rungs import Classified, Disposition
 from homestead_law.packs import custody
+from homestead_law.store import Sidecar
 
 MATTER = custody.MATTER  # "custody"
+
+#: A fixed reference date, so the seeded deadlines have stable urgency in the
+#: demo. The running app uses the real today.
+TODAY = "2026-08-10"
 
 #: field → (payload, derived form or None). Invented content; real rungs.
 _DEMO: dict[str, tuple[str, str | None]] = {
@@ -41,6 +46,17 @@ _DEMO: dict[str, tuple[str, str | None]] = {
 }
 
 
+#: deadline id → (rung, ISO date, instruction). A deadline's payload is the date;
+#: its derived form is the instruction, shown on the ambient queue when the rung
+#: withholds the date. Urgency is against TODAY (2026-08-10).
+_DEADLINES: dict[str, tuple[Rung, str, str]] = {
+    "answer": (Rung.L1, "2026-08-05", "Response to the petition"),         # overdue by 5
+    "evaluation": (Rung.L4, "2026-08-12", "A submission is due"),          # due in 2 (L4 → derived)
+    "mediation": (Rung.L3, "2026-08-18", "Mediation session"),            # due in 8
+    "hearing": (Rung.L1, "2026-09-15", "Custody hearing"),                # due in 36
+}
+
+
 def seed(store: Sidecar) -> None:
     """Write the synthetic matter into the store, replacing any prior demo. Each
     field becomes one record keyed `(custody, <field>, primary)`, classified at
@@ -48,6 +64,13 @@ def seed(store: Sidecar) -> None:
     for field, (payload, derived) in _DEMO.items():
         rung = custody.FIELDS[field]
         store.put(MATTER, field, "primary", Classified(rung, payload, derived), overwrite=True)
+
+
+def seed_deadlines(store: Sidecar) -> None:
+    """Write the synthetic deadlines — the queue's input. Separate from `seed` so
+    the field list in `compose_demo` stays fields-only."""
+    for item_id, (rung, date, instruction) in _DEADLINES.items():
+        store.put(MATTER, "deadline", item_id, Classified(rung, date, instruction), overwrite=True)
 
 
 def open_matter(store: Sidecar) -> Window:
@@ -83,4 +106,25 @@ def compose_demo(store: Sidecar) -> str:
     lines.append(
         f"detail ssn (S1_DETAIL): {sealed.disposition.value} (value={sealed.value!r})"
     )
+    return "\n".join(lines)
+
+
+def compose_queue(store: Sidecar, today: str = TODAY) -> str:
+    """Seed the deadlines and render the queue — the store→dates→gate pipeline for
+    *what is due*, headless. Overdue first, then soonest; an L4 deadline shows its
+    derived instruction, not its date; and the resting cover shows nothing over a
+    single matter (I-31), even though the queue itself has items."""
+    seed_deadlines(store)
+    lines = [f"{MATTER} — what's due, as of {today}:"]
+    for item in queue_mod.queue(store, today=today):
+        if item.gap:
+            mark = "date unreadable"
+        elif item.overdue:
+            mark = f"overdue by {abs(item.days_until)} days"
+        else:
+            mark = f"due in {item.days_until} days"
+        lines.append(f"  [{item.rung.value}] {item.shown} — {mark}")
+
+    resting = queue_mod.cover(store, today=today)
+    lines.append(f"cover (resting): {resting or 'Nothing is open — single matter (I-31)'}")
     return "\n".join(lines)
