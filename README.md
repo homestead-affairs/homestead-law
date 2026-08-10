@@ -6,9 +6,12 @@ disputes. Prose name: **Law Gazelle**.
 A **self-contained** desktop module: it ships to a self-represented parent or a
 legal-aid clinic who double-clicks it, so its store is embedded **SQLite** — a
 linked library, not a server (the face's 2026-08-04 "no listening socket"
-decision holds; SQLite binds no port). It **pins `homestead.keep`** — the
-import-pure record, deadline, rung and gate core — by immutable ref, and shares
-the `~/.homestead` root with the ledger module, because a household's affairs are
+decision holds; SQLite binds no port). The record layer is the engine's now:
+`store.py` is a thin binding — `homestead.keep.store`'s adapter contract on a
+SQLite backing, in the law database. The invariants (I-6/I-7/I-9/I-11) are the
+engine's, tested there against every backing; this module only chooses the
+backing and the database. It **pins `homestead.keep`** by immutable ref and
+shares the `~/.homestead` root with the ledger, because a household's affairs are
 one thing.
 
 The shared **Postgres** engine on the fleet side (the Willow side of the die) is
