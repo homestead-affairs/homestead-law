@@ -10,9 +10,10 @@ decision holds; SQLite binds no port). The record layer is the engine's now:
 `store.py` is a thin binding — `homestead.keep.store`'s adapter contract on a
 SQLite backing, in the law database. The invariants (I-6/I-7/I-9/I-11) are the
 engine's, tested there against every backing; this module only chooses the
-backing and the database. It **pins `homestead.keep`** by immutable ref and
-shares the `~/.homestead` root with the ledger, because a household's affairs are
-one thing.
+backing and the database. It **pins the engine from PyPI** —
+`homestead-affairs>=0.0.2,<1.0` (the distribution name; `import homestead` is
+unchanged) — and shares the `~/.homestead` root with the ledger, because a
+household's affairs are one thing.
 
 The shared **Postgres** engine on the fleet side (the Willow side of the die) is
 a *sync target*, reached through the egress gate — never a runtime dependency of
@@ -52,10 +53,11 @@ tightly by the database.*
 ## The method
 
 Test-first, as in `homestead`: every claim is a check somebody can run. From a
-cold checkout with the engine on the path:
+cold checkout — the engine (`homestead.keep`) resolves from PyPI as
+`homestead-affairs`, no sibling checkout needed:
 
 ```bash
-pip install -e .    # pins homestead.keep
+pip install -e .    # pulls homestead-affairs (homestead.keep) from PyPI
 pytest -q
 ```
 

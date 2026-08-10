@@ -4,46 +4,24 @@ on: [push, pull_request]
 jobs:
   invariants:
     # A cold checkout, nothing but pytest, bare `pytest -q` — the same posture as
-    # the engine's CI (homestead I-27/I-28). The one addition is that this module
-    # pins homestead.keep, which is not on PyPI, so CI checks the engine out and
-    # installs it editable *before* installing this module — after which the
-    # `homestead` requirement in pyproject is already satisfied.
+    # the engine's CI (homestead I-27/I-28). The engine (homestead.keep) now ships
+    # on PyPI as `homestead-affairs`, so `pip install -e .` resolves it from the
+    # index like any other dependency — no cross-repo checkout, no ENGINE_TOKEN.
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: check out homestead-law
-        uses: actions/checkout@v4
-        with:
-          path: homestead-law
-
-      - name: check out the homestead engine
-        uses: actions/checkout@v4
-        with:
-          repository: rudi193-cmd/homestead
-          # The adapter-seam PR (#11) is merged, so the engine's `main` now
-          # carries homestead.keep.store. Repin to a pinned tag (the Möbius
-          # rule — immutable refs) once the engine cuts one.
-          ref: main
-          path: homestead
-          # github.token reaches the engine repo when it is public or the same
-          # owner allows it; if the engine is private, add a PAT with read access
-          # to it as the ENGINE_TOKEN secret and this picks it up.
-          token: ${{ secrets.ENGINE_TOKEN || github.token }}
-
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
 
       - run: pip install pytest
-      - run: pip install -e ./homestead        # the engine — homestead.keep
-      - run: pip install -e ./homestead-law     # 'homestead' requirement now satisfied
+      - run: pip install -e .        # pulls homestead-affairs (homestead.keep) from PyPI
 
       - name: pytest
-        working-directory: homestead-law
         run: pytest -q
 
       - name: smoke-run the module headless
-        working-directory: homestead-law
         run: python -m homestead_law --smoke
