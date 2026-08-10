@@ -23,10 +23,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: rudi193-cmd/homestead
-          # Temporary: the branch carrying homestead.keep.store. Repin to a
-          # pinned tag (the Möbius rule — immutable refs) once the engine cuts
-          # one, or to `main` once its adapter-seam PR merges.
-          ref: claude/continuing-projects-o0jm9a
+          # The adapter-seam PR (#11) is merged, so the engine's `main` now
+          # carries homestead.keep.store. Repin to a pinned tag (the Möbius
+          # rule — immutable refs) once the engine cuts one.
+          ref: main
           path: homestead
           # github.token reaches the engine repo when it is public or the same
           # owner allows it; if the engine is private, add a PAT with read access
