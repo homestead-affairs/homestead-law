@@ -6,21 +6,41 @@ opens on it and draws the list only when the operator opens a matter.
 **I-29: the surface holds no domain logic.** The entry point routes to `view`,
 which composes through `Window` over the SQLite store and calculates nothing.
 
-Three ways in:
+Three ways in, plus `--help`:
+  * `--help` / `-h` — print this usage and exit 0. Never opens a window.
   * `--smoke` — start, prove every import survived packaging, exit without a
     display. What CI runs against the built artifact.
   * `--demo` — seed a synthetic custody matter into a throwaway store and print
     the list and a detail, composed through the gate. The pipeline, headless, on
     SQLite.
-  * default — open the tkinter view on the cover.
+  * default — open the tkinter view on the cover. On a box with no tkinter or
+    no display, this fails legibly: a one-line message pointing at `--demo` and
+    `--smoke`, and a non-zero exit — never a raw `ModuleNotFoundError` or
+    `TclError` traceback.
 """
 from __future__ import annotations
 
 import sys
 
+USAGE = """\
+usage: python -m homestead_law [--help] [--smoke | --demo]
+
+  --help, -h   show this message and exit
+  --smoke      prove every import survived packaging; exit without a display
+  --demo       seed a synthetic custody matter and print it, headless
+  (default)    open the tkinter view on the cover — requires tkinter and a
+               display; falls back to a guidance message if neither is present
+"""
+
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+
+    if "--help" in argv or "-h" in argv:
+        # Handled before any other branch, and before `view` is imported, so
+        # `--help` never touches tkinter or a display.
+        print(USAGE, end="")
+        return 0
 
     if "--smoke" in argv:
         # Prove the interpreter and every import survived packaging — this
@@ -53,7 +73,32 @@ def main(argv: list[str] | None = None) -> int:
     # Imported inside main so the module stays importable on a headless box.
     from homestead_law.app import view
 
-    return view.run()
+    try:
+        import tkinter
+    except ModuleNotFoundError as exc:
+        # Covers both "no tkinter package at all" (name == "tkinter") and "the
+        # package is present but its C extension isn't built" (name ==
+        # "_tkinter", the common cause on minimal/CI Python builds).
+        if exc.name not in ("tkinter", "_tkinter"):
+            raise
+        print(
+            "homestead-law: tkinter is not available on this interpreter — "
+            "try `--demo` (headless pipeline) or `--smoke` (import check) instead.",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        return view.run()
+    except tkinter.TclError:
+        # "couldn't connect to display" and friends — tkinter imports fine but
+        # there is nowhere to open a window (e.g. a headless server/container).
+        print(
+            "homestead-law: no display available to open the window — "
+            "try `--demo` (headless pipeline) or `--smoke` (import check) instead.",
+            file=sys.stderr,
+        )
+        return 1
 
 
 if __name__ == "__main__":
