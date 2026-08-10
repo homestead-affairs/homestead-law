@@ -16,10 +16,12 @@ a *sync target*, reached through the egress gate — never a runtime dependency 
 the shipped app. Sync is an **S4 egress**: an `L5` record never crosses, and what
 lands in the shared store is only what the household chose to expose.
 
-> **Status: bite 1 — the store.** The record layer, re-seated from
-> `homestead.keep`'s file sidecar onto a SQLite table. Suite: **15 passed**. The
-> matter packs, the registry, the queue and the app are extracted onto this store
-> next.
+> **Status: bite 2 — the custody pack and the registry.** The record store on
+> SQLite (bite 1), plus the first matter pack (`packs/custody`, classified at
+> import — an unclassified field fails the build) and the **registry** (I-23),
+> the one enumeration of matter types, extracted from the `homestead`
+> proving-ground onto this module. Suite: **36 passed**. The queue and the app
+> are next.
 
 ## What is enforced here today
 
