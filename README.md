@@ -16,12 +16,16 @@ a *sync target*, reached through the egress gate — never a runtime dependency 
 the shipped app. Sync is an **S4 egress**: an `L5` record never crosses, and what
 lands in the shared store is only what the household chose to expose.
 
-> **Status: bite 2 — the custody pack and the registry.** The record store on
-> SQLite (bite 1), plus the first matter pack (`packs/custody`, classified at
-> import — an unclassified field fails the build) and the **registry** (I-23),
-> the one enumeration of matter types, extracted from the `homestead`
-> proving-ground onto this module. Suite: **36 passed**. The queue and the app
-> are next.
+> **Status: bite 3 — runnable end to end on SQLite.** The store (bite 1), the
+> custody pack and registry (bite 2), and now the **app** — the two S1 surfaces
+> (`app/window`, `app/view`), the cover's re-identification check (`app/cover`,
+> I-31), the surfaced advisory matcher (`app/advisories`), and the citation
+> extractor (`patterns`, I-18) — all reading the SQLite store. The chokepoint
+> (I-16) guards the app: only the store reaches a payload, and no surface
+> reflects. `python -m homestead_law --demo` prints the whole store→gate→surface
+> pipeline headless. Suite: **75 passed**. This is the "prove one app on SQLite
+> end to end" milestone; the adapter seam and the gated Postgres sync generalize
+> from here.
 
 ## What is enforced here today
 
