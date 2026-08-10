@@ -40,9 +40,21 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from homestead.keep import paths
-from homestead.keep.rungs import Classified, Rung, _read_rung
+from homestead.keep.dates import UnparseableDate, parse_deadline
+from homestead.keep.rungs import (
+    Classified,
+    Disposition,
+    Rung,
+    Surface,
+    _read_rung,
+    serve,
+)
 
-__all__ = ["key", "InvalidKey", "RecordExists", "Replaced", "Sidecar", "Canonical"]
+__all__ = ["key", "InvalidKey", "RecordExists", "Replaced", "Due", "Sidecar", "Canonical"]
+
+#: The item_type under which deadlines are stored. A deadline record's payload is
+#: the date; its `derived` is the instruction that stands in for it.
+DEADLINE = "deadline"
 
 Ref = tuple[str, str, str]
 
@@ -71,6 +83,25 @@ class Replaced:
 
     key: Ref
     previous: Classified
+
+
+@dataclass(frozen=True)
+class Due:
+    """One deadline, read out of the store and already through the gate.
+
+    The store is the payload boundary, so it — not the queue — reads the date and
+    serves the display. `iso` is the parsed deadline date (or `None` when the
+    stored date could not be parsed — a **gap**, surfaced rather than dropped,
+    I-8), used for urgency. `shown` is what may be displayed: the date for
+    `L1`–`L3`, the derived instruction for `L4`. A sealed (`L5`) deadline never
+    becomes a `Due` — the queue cannot show, or count, what it may not reveal.
+    """
+
+    ref: Ref
+    iso: str | None
+    rung: Rung
+    shown: str
+    gap: bool
 
 
 def key(matter: str, item_type: str, item_id: str) -> Ref:
@@ -203,6 +234,32 @@ class _Reader:
 
         record = self.get(matter, item_type, item_id)
         return _advise(record.rung, record.payload)
+
+    def deadlines(self, matter: str) -> list["Due"]:
+        """This matter's deadlines, parsed and gated — ready to queue.
+
+        The store is the one place a payload is read (the chokepoint), so the date
+        is parsed and the display is served *here*, and the queue never touches a
+        raw payload. An unparseable stored date is a **gap** — surfaced, never
+        dropped (I-8): a deadline the queue cannot assess is worse than one it can,
+        so it is shown, flagged, for a human to fix. A **sealed (`L5`)** deadline
+        is dropped without a trace (the `serve_all` discipline) — the queue may
+        not reveal, or count, what `L5` forbids.
+        """
+        out: list[Due] = []
+        for ref, record in self.records(matter):
+            if ref[1] != DEADLINE:
+                continue
+            served = serve(record, Surface.S1_LIST)
+            if served.disposition is Disposition.DENY:
+                continue
+            try:
+                iso: str | None = parse_deadline(record.payload).iso
+                gap = False
+            except UnparseableDate:
+                iso, gap = None, True
+            out.append(Due(ref=ref, iso=iso, rung=record.rung, shown=str(served.value), gap=gap))
+        return out
 
 
 class Canonical(_Reader):

@@ -23,9 +23,13 @@ lands in the shared store is only what the household chose to expose.
 > extractor (`patterns`, I-18) — all reading the SQLite store. The chokepoint
 > (I-16) guards the app: only the store reaches a payload, and no surface
 > reflects. `python -m homestead_law --demo` prints the whole store→gate→surface
-> pipeline headless. Suite: **75 passed**. This is the "prove one app on SQLite
-> end to end" milestone; the adapter seam and the gated Postgres sync generalize
-> from here.
+> pipeline headless. And the **queue** (`queue`) — *what the season owes* —
+> deadlines across every matter, iterating `all_matters()` (the registry, not a
+> hand-kept list — BUG-6's fix), computing urgency with `homestead.keep.dates`,
+> surfacing an unparseable date as a gap (I-8), dropping a sealed deadline, and
+> feeding the cover's re-identification check (I-31). Suite: **84 passed**. The
+> "prove one app on SQLite end to end" milestone is met; the adapter seam and
+> the gated Postgres sync generalize from here.
 
 ## What is enforced here today
 
