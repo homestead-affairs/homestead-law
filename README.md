@@ -11,7 +11,7 @@ decision holds; SQLite binds no port). The record layer is the engine's now:
 SQLite backing, in the law database. The invariants (I-6/I-7/I-9/I-11) are the
 engine's, tested there against every backing; this module only chooses the
 backing and the database. It **pins the engine from PyPI** —
-`homestead-affairs>=0.0.2,<1.0` (the distribution name; `import homestead` is
+`homestead-affairs>=0.1.0,<1.0` (the distribution name; `import homestead` is
 unchanged) — and shares the `~/.homestead` root with the ledger, because a
 household's affairs are one thing.
 
