@@ -1,13 +1,38 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
+# Distribution name, NOT the import name. `import homestead_law` is unchanged
+# (see [tool.hatch.build.targets.wheel] below) — this is only what you
+# `pip install`. `homestead-law` is free on PyPI (confirmed 404 on
+# /pypi/homestead-law/json), so no split is needed here — distribution and
+# import names differ only by the hyphen/underscore PyPI already normalises.
 name = "homestead-law"
-version = "0.0.1"
+# The git tag is the single source of truth — see [tool.hatch.version]. The
+# version is deliberately NOT a literal here, mirroring the engine and the
+# ledger: a number nothing derives is a number that goes stale. hatch-vcs
+# derives it from the tag instead, so there is exactly one place a release
+# number is decided.
+dynamic = ["version"]
 description = "Homestead · Affairs — module one. The legal module (Law Gazelle), local-first on SQLite, pinning homestead.keep."
+readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
+keywords = ["law", "legal-aid", "self-represented", "local-first", "sqlite", "homestead"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Legal Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Office/Business",
+]
 
 # Module one of the Homestead · Affairs face. It is **self-contained**: it ships
 # to a self-represented parent or a legal-aid clinic who double-clicks it, so its
@@ -36,7 +61,40 @@ license = { text = "Apache-2.0" }
 dependencies = ["homestead-affairs>=0.1.0,<1.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+# `pyyaml` and `tomli` are for tests/test_invariants_release.py, which reads the
+# release workflows and pyproject to check the four release files agree. It
+# importorskips on yaml, so leaving pyyaml out would turn those checks into a
+# silent skip — the exact failure mode they exist to catch. Dev-only, so the
+# runtime `dependencies` list above is untouched.
+dev = ["pytest>=8.0", "pyyaml", "tomli; python_version<'3.11'"]
 
-[tool.setuptools]
+[project.scripts]
+homestead-law = "homestead_law.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/rudi193-cmd/homestead-law"
+Repository = "https://github.com/rudi193-cmd/homestead-law"
+Issues = "https://github.com/rudi193-cmd/homestead-law/issues"
+Changelog = "https://github.com/rudi193-cmd/homestead-law/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+# Derived from the git tag (hatch-vcs). At an exact tag `vX.Y.Z` the version is
+# X.Y.Z; off-tag builds get a `.devN+g<sha>` suffix that PyPI rejects, so an
+# accidental publish from an untagged commit fails loudly instead of shipping
+# something mislabelled. CI must check out with `fetch-depth: 0` — the default
+# shallow checkout carries no tags and the derived version would be wrong.
+#
+# No tag exists yet: this repo has never published. `.release-please-manifest.json`
+# anchors the current version at 0.0.1 (what the code already called itself), and
+# release-please cuts the first real tag from the commits (`release-type: simple`,
+# release-please-config.json) rather than anyone tagging by hand — PyPI never lets
+# a version be reused.
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
 packages = ["homestead_law"]
+
+[tool.pytest.ini_options]
+# Bare `pytest -q` must work. Nothing shadows the live suite.
+testpaths = ["tests"]
+norecursedirs = ["_archived", "build", "dist", ".git", "packaging"]

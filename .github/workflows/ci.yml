@@ -1,12 +1,26 @@
 name: ci
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch: {}
+
+# `fetch-depth: 0` on every checkout is not optional now: the version is derived
+# from the git tag (hatch-vcs, pyproject `dynamic = ["version"]`), and the
+# default shallow checkout carries no tags — `pip install -e .` would then build
+# a mislabelled version. The cold-checkout posture is unchanged; full history is
+# a read, not an install step. Mirrors the engine's `homestead/.github/workflows/ci.yml`
+# and the ledger's `homestead-ledger/.github/workflows/ci.yml`.
 
 jobs:
   invariants:
     # A cold checkout, nothing but pytest, bare `pytest -q` — the same posture as
-    # the engine's CI (homestead I-27/I-28). The engine (homestead.keep) now ships
-    # on PyPI as `homestead-affairs`, so `pip install -e .` resolves it from the
-    # index like any other dependency — no cross-repo checkout, no ENGINE_TOKEN.
+    # the engine's CI and the ledger's. The engine (homestead.keep) ships on
+    # PyPI as `homestead-affairs`, so `pip install -e .` resolves it from the
+    # index like any dependency — no cross-repo checkout.
+    #
+    # test_invariants_release.py importorskips PyYAML, which is not installed
+    # here — it runs in the `release-wiring` leg below, which has the dev extra.
     strategy:
       fail-fast: false
       matrix:
@@ -14,6 +28,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
 
@@ -25,3 +41,52 @@ jobs:
 
       - name: smoke-run the module headless
         run: python -m homestead_law --smoke
+
+  release-wiring:
+    # The release chain is four files that must agree, and every disagreement is
+    # silent (tests/test_invariants_release.py). That test reads the workflows
+    # with PyYAML, so it needs the dev extra — without it the check would *skip*,
+    # which is the exact silent failure it exists to catch. One leg, dev extra,
+    # so the invariants job above stays cold.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[dev]"
+      - run: pytest -q tests/test_invariants_release.py
+
+  # Aggregate gate: branch protection requires a single check named "test", and
+  # release-please.yml's auto-merge waits on it. Green only when every leg is.
+  #
+  # No `artifact` leg here — unlike the ledger, homestead-law has no
+  # `packaging/` directory and no PyInstaller build; this module is not shipped
+  # as a double-clickable binary, so there is nothing for a third leg to build.
+  #
+  # `if: always()` is load-bearing, not boilerplate. Without it, a failing
+  # dependency does not fail this job — it *skips* it, because that is what
+  # `needs:` means. A skipped required check does not block a merge, so the one
+  # check branch protection trusts would go quiet at exactly the moment it
+  # mattered. The result is asserted explicitly rather than inferred from this
+  # job having run.
+  test:
+    needs: [invariants, release-wiring]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert every dependency actually succeeded
+        # 'skipped' and 'cancelled' are failures here too: a leg that did not run
+        # has told us nothing, and this gate speaks for all of them.
+        if: ${{ contains(needs.*.result, 'failure')
+                || contains(needs.*.result, 'cancelled')
+                || contains(needs.*.result, 'skipped') }}
+        run: |
+          echo "invariants=${{ needs.invariants.result }}"
+          echo "release-wiring=${{ needs.release-wiring.result }}"
+          echo "::error::a required job did not succeed — see the results above"
+          exit 1
+
+      - run: echo "invariants and release-wiring are green"
