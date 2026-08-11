@@ -11,6 +11,12 @@ list shows a rung and a line per item; opening one shows the detail. Synthetic
 data only (`demo.seed`), in a throwaway store, until the ledger is wired — so
 running this never writes a real household's record.
 
+**The look is the engine's, not this module's.** `homestead.app.theme` — the
+shared stdlib `ttk.Style` theme — is applied once to the root, and the list panes
+colour their rows by rung (`theme.rung_color`), so this window and
+`homestead-ledger`'s read as one product. There is no second copy of the palette
+to drift.
+
 `tkinter` is imported inside `run()` so the module stays importable on a headless
 box (the suite reads this file; it does not open a display).
 """
@@ -19,6 +25,7 @@ from __future__ import annotations
 import os
 import tempfile
 
+from homestead.app import theme
 from homestead.keep.rungs import Disposition
 from homestead_law import queue as queue_mod
 from homestead_law.app import advisories, demo
@@ -41,6 +48,7 @@ def run() -> int:
     root = tk.Tk()
     root.title("Homestead")
     root.minsize(600, 420)
+    theme.apply(root)
     content = ttk.Frame(root, padding=24)
     content.pack(fill="both", expand=True)
 
@@ -51,16 +59,20 @@ def run() -> int:
     def show_cover() -> None:
         window.close()
         clear()
-        ttk.Label(content, text="Homestead", font=("TkDefaultFont", 22)).pack(anchor="w")
-        ttk.Label(content, text="The affairs you handle yourself.").pack(anchor="w", pady=(4, 24))
+        ttk.Label(content, text="Homestead", style="Heading.TLabel").pack(anchor="w")
+        ttk.Label(
+            content, text="The affairs you handle yourself.", style="Subheading.TLabel"
+        ).pack(anchor="w", pady=(4, 24))
         # The resting cover shows only counts that survive the re-identification
         # check (I-31). Over a single matter that is nothing, so the cover rests
         # on "Nothing is open" — the queue is there when the operator asks.
         resting = queue_mod.cover(store, today=today)
         summary = ", ".join(f"{n} {k.replace('_', ' ')}" for k, n in resting.items())
-        ttk.Label(content, text=summary or "Nothing is open.", foreground="grey").pack(anchor="w")
+        ttk.Label(content, text=summary or "Nothing is open.", style="Muted.TLabel").pack(anchor="w")
         ttk.Button(content, text="What's due", command=show_queue).pack(anchor="w", pady=(24, 0))
-        ttk.Button(content, text="Open custody matter", command=show_list).pack(anchor="w", pady=(4, 0))
+        ttk.Button(
+            content, text="Open custody matter", style="Secondary.TButton", command=show_list,
+        ).pack(anchor="w", pady=(8, 0))
 
     def show_queue() -> None:
         clear()
@@ -68,13 +80,14 @@ def run() -> int:
         # the same gated detail path as the list (the demo is one matter; a
         # multi-matter app would load each matter the queue spans).
         window.open_list(store.records(demo.MATTER))
-        ttk.Label(content, text="What's due", font=("TkDefaultFont", 16)).pack(anchor="w")
+        ttk.Label(content, text="What's due", style="Heading.TLabel").pack(anchor="w")
         ttk.Label(
-            content, text="showing derived · L4 present", foreground="grey"
+            content, text="showing derived · L4 present", style="Subheading.TLabel"
         ).pack(anchor="w", pady=(0, 12))
 
         items = queue_mod.queue(store, today=today)
         listbox = tk.Listbox(content, height=12)
+        theme.style_listbox(listbox)
         listbox.pack(fill="both", expand=True)
         for item in items:
             if item.gap:
@@ -84,49 +97,60 @@ def run() -> int:
             else:
                 mark = f"in {item.days_until}d"
             listbox.insert("end", f"[{item.rung.value}]  {item.shown}  ·  {mark}")
+            listbox.itemconfig("end", foreground=theme.rung_color(item.rung))
 
         def on_open(_event: object = None) -> None:
             selection = listbox.curselection()
             if selection:
-                show_detail(items[selection[0]].ref)
+                show_detail(items[selection[0]].ref, back=show_queue)
 
         listbox.bind("<Double-Button-1>", on_open)
         ttk.Button(content, text="Open", command=on_open).pack(anchor="w", pady=(12, 0))
-        ttk.Button(content, text="Close", command=show_cover).pack(anchor="w", pady=(4, 0))
+        ttk.Button(
+            content, text="Close", style="Secondary.TButton", command=show_cover,
+        ).pack(anchor="w", pady=(4, 0))
 
     def show_list() -> None:
         clear()
         window.open_list(store.records(demo.MATTER))
-        ttk.Label(content, text="custody", font=("TkDefaultFont", 16)).pack(anchor="w")
+        ttk.Label(content, text="custody", style="Heading.TLabel").pack(anchor="w")
         # one indicator per surface, not per row (I-33): the pane says an L4 is
-        # present in its derived form, never a badge on every line.
+        # present in its derived form, never a badge on every line — each row's
+        # own colour (`theme.rung_color`) is the per-row signal.
         has_l4 = any(row.rung.value == "L4" for row in window.rows)
         ttk.Label(
             content,
             text="showing derived · L4 present" if has_l4 else "showing",
-            foreground="grey",
+            style="Subheading.TLabel",
         ).pack(anchor="w", pady=(0, 12))
 
         listbox = tk.Listbox(content, height=12)
+        theme.style_listbox(listbox)
         listbox.pack(fill="both", expand=True)
         rows = window.rows
         for row in rows:
             listbox.insert("end", f"[{row.rung.value}]  {row.text}")
+            listbox.itemconfig("end", foreground=theme.rung_color(row.rung))
 
         def on_open(_event: object = None) -> None:
             selection = listbox.curselection()
             if selection:
-                show_detail(rows[selection[0]].ref)
+                show_detail(rows[selection[0]].ref, back=show_list)
 
         listbox.bind("<Double-Button-1>", on_open)
         ttk.Button(content, text="Open", command=on_open).pack(anchor="w", pady=(12, 0))
-        ttk.Button(content, text="Close", command=show_cover).pack(anchor="w", pady=(4, 0))
+        ttk.Button(
+            content, text="Close", style="Secondary.TButton", command=show_cover,
+        ).pack(anchor="w", pady=(4, 0))
 
-    def show_detail(ref) -> None:
+    def show_detail(ref, back) -> None:
+        # `back` is the pane this detail was opened from — the custody list or the
+        # queue — so "Back" returns where the operator came from rather than always
+        # the list (the ledger's two-pane view fixed the same assumption).
         served = window.open_detail(ref)
         clear()
-        ttk.Label(content, text=f"{ref[1]}", font=("TkDefaultFont", 16)).pack(anchor="w")
-        ttk.Label(content, text=served.rung.value, foreground="grey").pack(anchor="w", pady=(0, 12))
+        ttk.Label(content, text=f"{ref[1]}", style="Heading.TLabel").pack(anchor="w")
+        ttk.Label(content, text=served.rung.value, style="Muted.TLabel").pack(anchor="w", pady=(0, 12))
         body = (
             str(served.value)
             if served.disposition is Disposition.RENDER
@@ -140,9 +164,11 @@ def run() -> int:
         # line): an empty result is *no pattern matched*, not a safety claim.
         for line in advisories.advisory_lines(store, ref):
             ttk.Label(
-                content, text=line, foreground="grey", wraplength=520, justify="left"
+                content, text=line, style="Muted.TLabel", wraplength=520, justify="left"
             ).pack(anchor="w", pady=(8, 0))
-        ttk.Button(content, text="Back", command=show_list).pack(anchor="w", pady=(24, 0))
+        ttk.Button(
+            content, text="Back", style="Secondary.TButton", command=back,
+        ).pack(anchor="w", pady=(24, 0))
 
     show_cover()
     root.mainloop()
