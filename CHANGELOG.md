@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.1.0](https://github.com/rudi193-cmd/homestead-law/compare/v0.0.1...v0.1.0) (2026-08-11)
+
+
+### Added
+
+* draw from the engine's shared theme; pin homestead-affairs&gt;=0.1.0,&lt;1.0 ([cc3892d](https://github.com/rudi193-cmd/homestead-law/commit/cc3892d678d92b63389955d22926af1d583c36f1))
+
+
+### Fixed
+
+* handle --help and headless failure in the entry point ([99cce45](https://github.com/rudi193-cmd/homestead-law/commit/99cce4569786968d59461eb5f4911d53d073c420))
+* handle --help and headless failure in the entry point ([6bbcfd6](https://github.com/rudi193-cmd/homestead-law/commit/6bbcfd66e66010203ee705ab6fe297579807ba1e))
+
+
+### Build
+
+* add homestead-law's PyPI release chain (release-please + Trusted Publishing) ([f865328](https://github.com/rudi193-cmd/homestead-law/commit/f865328f2ba8374f8d37a2f2de6540aca428ccfb))
+* consume the engine from PyPI (homestead-affairs) ([9b213fc](https://github.com/rudi193-cmd/homestead-law/commit/9b213fcbc194b603a46c644c33bd05dd8faef197))
+* consume the engine from PyPI (homestead-affairs) ([35d269a](https://github.com/rudi193-cmd/homestead-law/commit/35d269aa28f993d8e5f314e5adbe2775307ee2cd))
+* relicense to Apache-2.0 ([2c76792](https://github.com/rudi193-cmd/homestead-law/commit/2c76792271b214f10fd5362f6f35a29dcfdc2093))
+* relicense to Apache-2.0 ([9e05384](https://github.com/rudi193-cmd/homestead-law/commit/9e05384eb41b7ffcde409385e69003e1c20d81ce))
+
+## Changelog
+
 All notable changes to `homestead-law` are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
