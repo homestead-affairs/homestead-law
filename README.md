@@ -61,4 +61,4 @@ pip install -e .    # pulls homestead-affairs (homestead.keep) from PyPI
 pytest -q
 ```
 
-MIT.
+Apache-2.0.
