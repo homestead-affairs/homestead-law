@@ -7,7 +7,7 @@ name = "homestead-law"
 version = "0.0.1"
 description = "Homestead · Affairs — module one. The legal module (Law Gazelle), local-first on SQLite, pinning homestead.keep."
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 
 # Module one of the Homestead · Affairs face. It is **self-contained**: it ships
 # to a self-represented parent or a legal-aid clinic who double-clicks it, so its
