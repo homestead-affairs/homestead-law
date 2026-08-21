@@ -5,3 +5,9 @@ __pycache__/
 build/
 dist/
 *.db
+
+# Host-local agent wiring — materialized by `willow-mcp project sync`, never shared.
+# (.mcp.json was already ignored; these are its siblings.)
+.willow/
+.cursor/
+.claude/
