@@ -72,8 +72,8 @@ _IN_RE = re.compile(
 # ── case number ───────────────────────────────────────────────────────────
 
 _CASE_NO = re.compile(
-    r"(?:(?:Case|Docket|File)\s*(?:No\.?|Number|#)?\s*|No\.\s*)"
-    r"([A-Z0-9][\w-]*-[\w]+)",
+    r"(?:(?:Case|Docket|File)[ \t]+(?:(?:No\.?|Number|#)[ \t]+)?|No\.[ \t]*)"
+    r"([A-Z0-9]\w*(?:-\w+)+)",
     re.IGNORECASE,
 )
 
