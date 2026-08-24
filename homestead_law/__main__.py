@@ -42,9 +42,10 @@ commands (real data, requires nestor-meaning):
   deadline     deadline <matter> <id> <date> — add a deadline
   queue        queue — what's due
   verify       verify — check the Nestor ledger chain
+  ui           ui [--port N] — intake and dashboard in the browser
 """
 
-_CLI_COMMANDS = {"resolve", "propose", "orders", "put", "deadline", "queue", "verify"}
+_CLI_COMMANDS = {"resolve", "propose", "orders", "put", "deadline", "queue", "verify", "ui"}
 
 
 def main(argv: list[str] | None = None) -> int:
