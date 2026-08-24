@@ -401,6 +401,23 @@ def _cmd_verify(args: Sequence[str]) -> int:
 
 # ── dispatch ───────────────────────────────────────────────────────────────
 
+def _cmd_ui(args: Sequence[str]) -> int:
+    """``ui [--port N]`` — open the intake and dashboard UI in a browser."""
+    from homestead_law.server import serve
+
+    port = 8383
+    i = 0
+    while i < len(args):
+        if args[i] == "--port" and i + 1 < len(args):
+            port = int(args[i + 1])
+            i += 2
+        else:
+            i += 1
+
+    serve(port=port)
+    return 0
+
+
 COMMANDS = {
     "resolve": (_cmd_resolve, "resolve <domain> <surface> — entity resolution"),
     "propose": (_cmd_propose, "propose <domain> <surface> <canonical> — propose an alias"),
@@ -409,6 +426,7 @@ COMMANDS = {
     "deadline": (_cmd_deadline, "deadline <matter> <id> <date> — add a deadline"),
     "queue": (_cmd_queue, "queue — what's due"),
     "verify": (_cmd_verify, "verify — check the Nestor ledger chain"),
+    "ui": (_cmd_ui, "ui — intake and dashboard in the browser"),
 }
 
 
