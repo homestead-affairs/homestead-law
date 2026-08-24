@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.1](https://github.com/homestead-affairs/homestead-law/compare/v0.1.0...v0.1.1) (2026-08-24)
+
+
+### Build
+
+* **deps:** bump actions/setup-python from 5 to 7 ([2d7bb9d](https://github.com/homestead-affairs/homestead-law/commit/2d7bb9d9550e9955ab4edcd658f7265b8da9dde0))
+* **deps:** bump actions/checkout from 4 to 7 ([e92aa17](https://github.com/homestead-affairs/homestead-law/commit/e92aa17c8694e2ad22b28d496a302eea3829f55b))
+* **deps:** bump actions/upload-artifact from 4 to 7 ([0404a71](https://github.com/homestead-affairs/homestead-law/commit/0404a717fd70e4d5e811b3a5c073b2e684b219ff))
+* **deps:** bump actions/download-artifact from 4 to 8 ([e878668](https://github.com/homestead-affairs/homestead-law/commit/e878668f617d41652eda39c7bd825b3c16770f1b))
+
 ## [0.1.0](https://github.com/rudi193-cmd/homestead-law/compare/v0.0.1...v0.1.0) (2026-08-11)
 
 
